@@ -1,18 +1,19 @@
 # WhatsApp CRM Extension
 
 ## 📖 Visão Geral
-Extensão independente para Google Chrome que adiciona recursos locais de CRM e produtividade ao WhatsApp Web. Não é afiliada, patrocinada ou aprovada pela WhatsApp/Meta.
+Extensão independente para Chrome e Firefox que adiciona recursos locais de CRM e produtividade ao WhatsApp Web. Não é afiliada, patrocinada ou aprovada pela WhatsApp/Meta.
 
 ## 🛠️ Tecnologias
-- **Manifest V3** - API mais moderna e segura do Chrome
+- **Manifest V3** - Manifestos específicos para Chrome e Firefox
 - **HTML/CSS/JS** - Interface nativa
-- **Chrome Storage** - Armazenamento local (pode ser migrado para Supabase)
-- **Service Worker** - Background scripts para gerenciamento de dados
+- **WebExtensions Storage** - Armazenamento local no perfil do navegador
+- **Painel lateral** - `sidePanel` no Chrome e `sidebar_action` no Firefox
 
 ## 📁 Estrutura do Projeto
 ```
 extention_chrome_crm/
-├── manifest.json          # Configuração da extensão
+├── manifest.json          # Configuração Chrome
+├── manifest.firefox.json  # Configuração Firefox/Mozilla Add-ons
 ├── assets/                # Ícones da extensão
 ├── src/
 │   ├── pages/
@@ -24,7 +25,8 @@ extention_chrome_crm/
 │   │   └── content.css    # Estilos injetados no WhatsApp Web
 │   └── scripts/
 │       ├── content.js     # Content script (WhatsApp Web)
-│       ├── background.js  # Service worker (background)
+│       ├── background.js  # Lógica de background
+│       ├── background-worker.js # Inicializador do service worker Chrome
 │       └── ...            # Scripts auxiliares
 └── README.md              # Documentação do projeto
 ```
@@ -34,7 +36,7 @@ extention_chrome_crm/
 ### 1. Gestão de Clientes
 - Cadastro e exclusão de clientes com nome e etiqueta
 - Alteração da etiqueta do cliente diretamente na lista
-- Lista persistida no Chrome Storage
+- Lista persistida no armazenamento local da extensão
 - Etiquetas: Novo, Qualificado, Em Negociação, Cliente
 
 ### 2. Respostas Rápidas
@@ -51,6 +53,18 @@ extention_chrome_crm/
 - Exportação e exclusão local dos dados, com aviso e consentimento de privacidade
 - Doação opcional por Pix; a extensão permanece gratuita
 
+## 📦 Gerar pacote para Firefox/Mozilla Add-ons
+
+Execute:
+
+```sh
+npm run package:firefox
+```
+
+O arquivo para enviar à Mozilla será `dist/whatsapp-crm-firefox.zip`. A pasta `dist/firefox/` contém a versão extraída para teste temporário; seu `manifest.json` já é o específico do Firefox. O ZIP inclui somente os arquivos de execução e a licença, sem `node_modules`, testes ou arquivos do Git.
+
+Para testar no Firefox, abra `about:debugging#/runtime/this-firefox`, clique em **Load Temporary Add-on...** e selecione `dist/firefox/manifest.json`. Para publicar, carregue o ZIP no [AMO Developer Hub](https://addons.mozilla.org/developers/). A validação automática e a revisão da Mozilla ainda são necessárias; gerar o ZIP não publica o complemento.
+
 ### 4. Integração com WhatsApp Web
 - Abre uma conversa existente pelo telefone cadastrado no CRM
 - Insere respostas rápidas no campo de mensagem para revisão e envio manual
@@ -64,20 +78,21 @@ extention_chrome_crm/
 5. **Relatórios Avançados** - Métricas e gráficos adicionais de produtividade
 
 ## 🔒 Privacidade e segurança
-- Dados de clientes e respostas ficam no armazenamento local do Chrome; o MVP não usa Supabase nem envia esses dados a um servidor.
+- Dados de clientes e respostas ficam no armazenamento local do navegador; o MVP não usa Supabase nem envia esses dados a um servidor.
 - A extensão pede consentimento no primeiro uso e permite exportar ou apagar os dados.
 - O armazenamento local não é criptografado por senha da extensão; proteja o dispositivo e o perfil do Chrome.
-- A página local de privacidade está em `src/pages/privacy.html`; ela precisa ser hospedada em uma URL pública e revisada antes da publicação.
+- A página de privacidade da extensão está em `src/pages/privacy.html`; a versão Markdown está em [PRIVACY.md](./PRIVACY.md) e pode ser publicada em uma URL pública para a listagem da loja.
 - A extensão interage com elementos do WhatsApp Web, que podem mudar sem aviso.
 
 ## ✉️ Contato
 **by InfoDevBrasil** — [infodevbrasil@gmail.com](mailto:infodevbrasil@gmail.com)
 
 ## 🧪 Testes
-Execute `npm test` para rodar testes de comportamento do service worker, métricas e payload Pix, além das verificações de sintaxe e estrutura.
+Execute `npm test` para rodar testes de comportamento, APIs dos painéis, métricas e payload Pix, além das verificações de sintaxe e estrutura dos dois manifestos.
 Execute `npm run generate:pix` depois de alterar dados do recebedor para reconstruir o QR.
+Execute `npm run package:firefox` para gerar o pacote de distribuição da Mozilla.
 
-## 📦 Como Testar
+## 📦 Como Testar no Chrome
 
 1. Abra o Chrome e navegue até `chrome://extensions/`
 2. Ative "Modo desenvolvedor" (top right)
@@ -86,5 +101,5 @@ Execute `npm run generate:pix` depois de alterar dados do recebedor para reconst
 5. Clique no ícone da extensão para abrir o popup
 6. Use o painel lateral (clique no ícone novamente ou use atalho)
 
-## 🌐 Publicação
-Para a Chrome Web Store, gere um arquivo ZIP da extensão (sem chave privada), envie pelo Chrome Web Store Developer Dashboard e complete a ficha da loja e as declarações de privacidade. Consulte a documentação oficial antes do envio.
+## 🌐 Publicação no Chrome
+Para a Chrome Web Store, prepare um pacote com o manifesto Chrome (sem chave privada), envie pelo Chrome Web Store Developer Dashboard e complete a ficha da loja e as declarações de privacidade. Consulte a documentação oficial antes do envio.

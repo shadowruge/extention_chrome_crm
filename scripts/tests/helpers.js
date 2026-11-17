@@ -34,6 +34,7 @@ function createBackground(initialStorage = {}) {
     }
   };
   const context = vm.createContext({ chrome, console: { log() {} }, crypto: webcrypto, Date });
+  vm.runInContext(fs.readFileSync(path.join(root, 'src/scripts/panel.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/scripts/background.js'), 'utf8'), context);
 
   return {

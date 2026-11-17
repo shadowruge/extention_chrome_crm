@@ -48,6 +48,12 @@ main {
   background: #15803d;
 }
 
+#popupNotice {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
 #features ul {
   list-style: none;
   padding: 0;

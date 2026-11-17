@@ -5,9 +5,11 @@ console.log('WhatsApp CRM Background Service Worker carregado');
 
 chrome.commands.onCommand.addListener(async command => {
   if (command !== 'open_side_panel') return;
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) await openCrmPanel(tab.id);
+  } catch (error) {
+    console.error('Nao foi possivel abrir o painel do CRM:', error);
   }
 });
 
@@ -71,8 +73,13 @@ async function handleMessage(message, sender) {
   }
 
   if (message.action === 'openSidePanel') {
-    if (sender.tab?.id) await chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => {});
-    return { success: true };
+    if (!sender.tab?.id) return { success: false, error: 'Nao foi possivel identificar a aba atual' };
+    try {
+      await openCrmPanel(sender.tab.id);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
 
   if (!privacyConsentAccepted) {

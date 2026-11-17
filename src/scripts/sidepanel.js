@@ -23,12 +23,6 @@ const mensagem = document.getElementById('mensagem');
 const respostasList = document.getElementById('respostasList');
 const salvarRespostaBtn = document.getElementById('salvarRespostaBtn');
 
-function escapeHtml(value) {
-  const element = document.createElement('span');
-  element.textContent = String(value);
-  return element.innerHTML;
-}
-
 async function send(action, dados) {
   return chrome.runtime.sendMessage({ action, dados });
 }
@@ -50,31 +44,70 @@ function renderClients() {
   const clients = Object.values(data.clientData || {});
   if (!clients.length) {
     clientesList.className = 'list-empty';
-    clientesList.innerHTML = '<p>Nenhum cliente cadastrado ainda</p>';
+    const emptyMessage = document.createElement('p');
+    emptyMessage.textContent = 'Nenhum cliente cadastrado ainda';
+    clientesList.replaceChildren(emptyMessage);
     return;
   }
 
   clientesList.className = 'list-items';
-  clientesList.innerHTML = clients.map(client => `
-    <article class="crm-client-item" data-id="${escapeHtml(client.id)}">
-      <div>
-        <button type="button" class="client-open" data-id="${escapeHtml(client.id)}" title="Abrir conversa no WhatsApp">
-          <strong>${escapeHtml(client.nome)}</strong>
-        </button>
-        <select class="client-tag-select" data-id="${escapeHtml(client.id)}" aria-label="Etiqueta de ${escapeHtml(client.nome)}">
-          <option value="novo" ${client.etiqueta === 'novo' ? 'selected' : ''}>Novo</option>
-          <option value="qualificado" ${client.etiqueta === 'qualificado' ? 'selected' : ''}>Qualificado</option>
-          <option value="em-negociacao" ${client.etiqueta === 'em-negociacao' ? 'selected' : ''}>Em Negociação</option>
-          <option value="cliente" ${client.etiqueta === 'cliente' ? 'selected' : ''}>Cliente</option>
-        </select>
-        ${client.telefone ? `<span class="client-phone">${escapeHtml(client.telefone)}</span>` : '<span class="client-phone muted">Telefone nao informado</span>'}
-      </div>
-      <div class="client-actions">
-        <button type="button" class="client-open-chat" data-id="${escapeHtml(client.id)}">Abrir conversa</button>
-        <button type="button" class="client-delete" data-id="${escapeHtml(client.id)}" aria-label="Excluir ${escapeHtml(client.nome)}">Excluir</button>
-      </div>
-    </article>
-  `).join('');
+  const clientElements = clients.map(client => {
+    const id = String(client.id || '');
+    const name = String(client.nome || '');
+    const article = document.createElement('article');
+    article.className = 'crm-client-item';
+    article.dataset.id = id;
+
+    const details = document.createElement('div');
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'client-open';
+    openButton.dataset.id = id;
+    openButton.title = 'Abrir conversa no WhatsApp';
+    const nameElement = document.createElement('strong');
+    nameElement.textContent = name;
+    openButton.append(nameElement);
+
+    const tagSelect = document.createElement('select');
+    tagSelect.className = 'client-tag-select';
+    tagSelect.dataset.id = id;
+    tagSelect.setAttribute('aria-label', `Etiqueta de ${name}`);
+    for (const [value, label] of [
+      ['novo', 'Novo'],
+      ['qualificado', 'Qualificado'],
+      ['em-negociacao', 'Em Negociação'],
+      ['cliente', 'Cliente']
+    ]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      option.selected = client.etiqueta === value;
+      tagSelect.append(option);
+    }
+
+    const phone = document.createElement('span');
+    phone.className = client.telefone ? 'client-phone' : 'client-phone muted';
+    phone.textContent = client.telefone || 'Telefone nao informado';
+    details.append(openButton, tagSelect, phone);
+
+    const actions = document.createElement('div');
+    actions.className = 'client-actions';
+    const openChatButton = document.createElement('button');
+    openChatButton.type = 'button';
+    openChatButton.className = 'client-open-chat';
+    openChatButton.dataset.id = id;
+    openChatButton.textContent = 'Abrir conversa';
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'client-delete';
+    deleteButton.dataset.id = id;
+    deleteButton.setAttribute('aria-label', `Excluir ${name}`);
+    deleteButton.textContent = 'Excluir';
+    actions.append(openChatButton, deleteButton);
+    article.append(details, actions);
+    return article;
+  });
+  clientesList.replaceChildren(...clientElements);
 
   const openClient = async button => {
     const client = data.clientData[button.dataset.id];
@@ -141,21 +174,38 @@ function renderClients() {
 function renderReplies() {
   if (!data.quickReplies.length) {
     respostasList.className = 'list-empty';
-    respostasList.innerHTML = '<p>Nenhuma resposta salva ainda</p>';
+    const emptyMessage = document.createElement('p');
+    emptyMessage.textContent = 'Nenhuma resposta salva ainda';
+    respostasList.replaceChildren(emptyMessage);
     return;
   }
 
   respostasList.className = 'list-items';
-  respostasList.innerHTML = data.quickReplies.map(reply => `
-    <article class="crm-reply-item" data-id="${escapeHtml(reply.id)}">
-      <p>${escapeHtml(reply.mensagem)}</p>
-      <div class="item-actions">
-        <button type="button" class="reply-use" data-id="${escapeHtml(reply.id)}">Usar</button>
-        <button type="button" class="reply-edit" data-id="${escapeHtml(reply.id)}">Editar</button>
-        <button type="button" class="reply-delete" data-id="${escapeHtml(reply.id)}">Excluir</button>
-      </div>
-    </article>
-  `).join('');
+  const replyElements = data.quickReplies.map(reply => {
+    const id = String(reply.id || '');
+    const article = document.createElement('article');
+    article.className = 'crm-reply-item';
+    article.dataset.id = id;
+    const message = document.createElement('p');
+    message.textContent = String(reply.mensagem || '');
+    const actions = document.createElement('div');
+    actions.className = 'item-actions';
+    for (const [className, label] of [
+      ['reply-use', 'Usar'],
+      ['reply-edit', 'Editar'],
+      ['reply-delete', 'Excluir']
+    ]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = className;
+      button.dataset.id = id;
+      button.textContent = label;
+      actions.append(button);
+    }
+    article.append(message, actions);
+    return article;
+  });
+  respostasList.replaceChildren(...replyElements);
 
   respostasList.querySelectorAll('.reply-use').forEach(button => {
     button.addEventListener('click', async () => {
@@ -305,7 +355,7 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
 });
 
 document.getElementById('deleteDataBtn').addEventListener('click', async () => {
-  const confirmed = window.confirm('Isso apagará clientes, respostas e indicadores deste perfil do Chrome, além de revogar o consentimento. Deseja continuar?');
+  const confirmed = window.confirm('Isso apagará clientes, respostas e indicadores deste perfil do navegador, além de revogar o consentimento. Deseja continuar?');
   if (!confirmed) return;
   const response = await chrome.runtime.sendMessage({ action: 'clearCrmData' });
   if (!response?.success) {

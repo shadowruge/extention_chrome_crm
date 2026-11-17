@@ -1,5 +1,5 @@
 RELATÓRIO DE ESTADO DO PROJETO
-Extensão para Google Chrome integrada ao WhatsApp Web
+Extensão para Chrome e Firefox integrada ao WhatsApp Web
 Data: 17/11/2026
 Etapa: MVP local e preparação para publicação
 Status: cadastro local de clientes, etiquetas, respostas rápidas e indicadores implementados.
@@ -17,12 +17,12 @@ Criar uma camada complementar para organizar contatos e atendimentos, facilitar 
 • Ainda não implementadas: sincronização entre dispositivos, equipe, Kanban, IA e relatórios avançados.
 
 4. ARQUITETURA TÉCNICA
-• Chrome Extensions Manifest V3: manifesto, permissões, scripts e recursos.
+• Manifest V3: manifestos separados para Chrome e Firefox.
 • HTML, CSS e JavaScript: interface, popup, configurações e painel.
 • Content Scripts: integração da interface complementar com a página do WhatsApp Web.
-• Chrome Runtime Messaging: comunicação entre popup, service worker e content scripts.
-• Chrome Storage local: dados do CRM, respostas e registros de conversas abertas; não há sincronização remota.
-• Permissões solicitadas: armazenamento local, painel lateral e acesso ao domínio do WhatsApp Web; a permissão ampla `tabs` foi removida.
+• WebExtensions Messaging: comunicação entre popup, background scripts e content scripts.
+• Armazenamento local: dados do CRM, respostas e registros de conversas abertas; não há sincronização remota.
+• Permissões solicitadas: armazenamento local e acesso ao domínio do WhatsApp Web; a permissão ampla `tabs` foi removida.
 • Supabase e serviços de IA não fazem parte do MVP atual.
 
 5. INTEGRAÇÃO COM WHATSAPP WEB
@@ -38,13 +38,19 @@ A extensão insere respostas no campo de mensagem para o usuário revisar e envi
 • Respeitar as políticas do WhatsApp, da Chrome Web Store e dos serviços integrados.
 • Evitar spam, raspagem massiva e mecanismos de contorno de segurança.
 
-7. PRÓXIMAS FASES
+7. PACOTE FIREFOX / MOZILLA ADD-ONS
+• Gerar o pacote com `npm run package:firefox`.
+• O ZIP `dist/whatsapp-crm-firefox.zip` usa `sidebar_action` e scripts de background compatíveis com Firefox.
+• Testar temporariamente em `about:debugging#/runtime/this-firefox`, selecionando `dist/firefox/manifest.json`.
+• Enviar o ZIP pelo AMO Developer Hub e concluir a validação e revisão da Mozilla.
+
+8. PRÓXIMAS FASES
 • Revisar permissões, preparar política de privacidade e disclosures de dados locais.
 • Completar testes em Chrome e documentar compatibilidade.
 • Preparar imagens, descrição, suporte e pacote ZIP para a Chrome Web Store.
 • Considerar sincronização/backend apenas se houver necessidade de produto multiusuário.
 
-8. DECISÕES PENDENTES
+9. DECISÕES PENDENTES
 • Finalidade principal: CRM, vendas/pedidos, automação, IA ou solução combinada.
 • Público: uso individual, equipe ou produto SaaS.
 • Funcionalidades prioritárias do MVP.
@@ -52,8 +58,8 @@ A extensão insere respostas no campo de mensagem para o usuário revisar e envi
 • Modelo de dados, permissões, retenção e tratamento de dados pessoais.
 • Limites de automação e eventual uso da API oficial do WhatsApp Business.
 
-9. PRÓXIMOS PASSOS
+10. PRÓXIMOS PASSOS
 Antes da publicação, definir a política de privacidade, a experiência de consentimento, o suporte e o modelo de monetização, além de testar a extensão em uma instalação limpa do Chrome.
 
-10. LIMITES DESTE RELATÓRIO
+11. LIMITES DESTE RELATÓRIO
 Este documento descreve um MVP local; não é uma especificação final, auditoria jurídica ou garantia de compatibilidade com futuras versões do WhatsApp Web. Os dados permanecem no Chrome deste perfil e não são sincronizados entre dispositivos.

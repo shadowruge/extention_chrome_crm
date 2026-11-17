@@ -3,6 +3,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+const firefoxManifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.firefox.json'), 'utf8'));
 
 if (manifest.manifest_version !== 3) throw new Error('Manifest deve usar a versao 3');
 if (manifest.permissions.includes('tabs')) {
@@ -11,18 +12,54 @@ if (manifest.permissions.includes('tabs')) {
 if (!manifest.host_permissions?.includes('https://web.whatsapp.com/*')) {
   throw new Error('Permissao de host do WhatsApp Web nao declarada');
 }
+if (manifest.background.service_worker !== 'src/scripts/background-worker.js') {
+  throw new Error('O service worker Chrome deve carregar o adaptador de painel compartilhado');
+}
+
+if (firefoxManifest.manifest_version !== 3) throw new Error('Manifest Firefox deve usar a versao 3');
+if (!firefoxManifest.sidebar_action?.default_panel) {
+  throw new Error('Manifest Firefox deve declarar a barra lateral');
+}
+if (firefoxManifest.permissions.includes('sidePanel') || firefoxManifest.side_panel) {
+  throw new Error('Manifest Firefox nao deve solicitar ou declarar APIs exclusivas do Chrome');
+}
+if (firefoxManifest.background?.service_worker || !firefoxManifest.background?.scripts?.includes('src/scripts/panel.js')) {
+  throw new Error('Manifest Firefox deve carregar scripts de background e o adaptador de painel');
+}
+if (!firefoxManifest.host_permissions?.includes('https://web.whatsapp.com/*')) {
+  throw new Error('Manifest Firefox nao declara acesso ao WhatsApp Web');
+}
+if (!firefoxManifest.browser_specific_settings?.gecko?.id) {
+  throw new Error('Manifest Firefox deve declarar um ID Gecko para assinatura AMO');
+}
+if (!firefoxManifest.browser_specific_settings.gecko.data_collection_permissions?.required?.includes('none')) {
+  throw new Error('Manifest Firefox deve declarar que nao transmite dados coletados');
+}
 
 const requiredFiles = [
   manifest.background.service_worker,
   manifest.action.default_popup,
   manifest.side_panel.default_path,
+  'src/scripts/background.js',
+  'src/scripts/panel.js',
+  'src/scripts/panel-firefox.js',
+  ...firefoxManifest.background.scripts,
+  firefoxManifest.action.default_popup,
+  firefoxManifest.sidebar_action.default_panel,
   ...Object.values(manifest.icons),
+  ...Object.values(firefoxManifest.icons),
   ...manifest.content_scripts.flatMap(script => [...(script.js || []), ...(script.css || [])])
 ];
 
 for (const file of requiredFiles) {
   const absolute = path.join(root, file);
   if (!fs.existsSync(absolute)) throw new Error(`Arquivo declarado no manifest nao encontrado: ${file}`);
+}
+
+for (const script of firefoxManifest.content_scripts) {
+  for (const file of [...(script.js || []), ...(script.css || [])]) {
+    if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo Firefox declarado nao encontrado: ${file}`);
+  }
 }
 
 for (const file of [

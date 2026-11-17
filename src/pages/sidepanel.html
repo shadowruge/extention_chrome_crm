@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp CRM Sidepanel</title>
+  <link rel="stylesheet" href="../components/sidepanel.css">
+</head>
+<body>
+  <div class="sidepanel-container">
+    <header>
+      <h2>💬 WhatsApp CRM</h2>
+      <button id="closeBtn" aria-label="Fechar painel">✕</button>
+    </header>
+    
+    <nav>
+      <ul>
+        <li><a href="#" class="active" data-section="dashboard">Dashboard</a></li>
+        <li><a href="#" data-section="clientes">Clientes</a></li>
+        <li><a href="#" data-section="respostas">Respostas Rápidas</a></li>
+        <li><a href="#" data-section="etiquetas">Etiquetas</a></li>
+        <li><a href="#" data-section="relatorios">Relatórios</a></li>
+        <li><a href="#" data-section="privacidade">Privacidade</a></li>
+        <li><a href="#" data-section="apoio">Apoiar</a></li>
+      </ul>
+    </nav>
+    
+    <main class="sections">
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="section active">
+        <div class="welcome-text">
+          <h3>Bem-vindo</h3>
+          <p>Use o painel lateral para gerenciar seus atendimentos no WhatsApp Web</p>
+        </div>
+        <div class="stats-grid dashboard-summary">
+          <div class="stat-item">
+            <div class="stat-number" id="dashboardClientes">0</div>
+            <div class="stat-label">Clientes cadastrados</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="dashboardRespostas">0</div>
+            <div class="stat-label">Respostas rápidas</div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Clientes Section -->
+      <section id="clientes" class="section">
+        <div class="form-section">
+          <h3>📋 Gestão de Clientes</h3>
+          <div class="form-group">
+            <label>Nome do Cliente</label>
+            <input type="text" id="clienteNome" maxlength="100" placeholder="Digite o nome...">
+          </div>
+          <div class="form-group">
+            <label>Telefone com DDD</label>
+            <input type="tel" id="clienteTelefone" maxlength="15" placeholder="Ex.: 5511999999999">
+            <small>Use apenas números, incluindo o código do país.</small>
+          </div>
+          <div class="form-group">
+            <label>Etiqueta</label>
+            <select id="clienteEtiqueta">
+              <option value="novo">Novo</option>
+              <option value="qualificado">Qualificado</option>
+              <option value="em-negociacao">Em Negociação</option>
+              <option value="cliente">Cliente</option>
+            </select>
+          </div>
+          <button id="addClienteBtn" class="btn-primary">Adicionar Cliente</button>
+          <div id="clientesList" class="list-empty">
+            <p>Nenhum cliente cadastrado ainda</p>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Respostas Rápidas Section -->
+      <section id="respostas" class="section">
+        <div class="form-section">
+          <h3>💾 Respostas Rápidas</h3>
+          <div class="form-group">
+            <label>Mensagem</label>
+            <textarea id="mensagem" maxlength="2000" placeholder="Digite sua mensagem modelo..." rows="3"></textarea>
+          </div>
+          <button id="salvarRespostaBtn" class="btn-primary">Salvar Resposta</button>
+          <div id="respostasList" class="list-empty">
+            <p>Nenhuma resposta salva ainda</p>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Etiquetas Section -->
+      <section id="etiquetas" class="section">
+        <div class="form-section">
+          <h3>🏷️ Etiquetas</h3>
+          <p>Organize conversas por status ou categoria</p>
+          <ul id="etiquetasList" class="tags-list">
+            <li class="tag tag-novo">Novo</li>
+            <li class="tag tag-qualificado">Qualificado</li>
+            <li class="tag tag-em-negociacao">Em Negociação</li>
+            <li class="tag tag-cliente">Cliente</li>
+          </ul>
+        </div>
+      </section>
+      
+      <!-- Relatórios Section -->
+      <section id="relatorios" class="section">
+        <div class="form-section">
+          <h3>📊 Indicadores</h3>
+          <p class="report-note">Atendimentos contam quando você abre a conversa pelo cadastro de clientes.</p>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number" id="totalAtendimentos">0</div>
+              <div class="stat-label">Atendimentos registrados</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="totalClientes">0</div>
+              <div class="stat-label">Total Clientes</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="clientesAtendidos">0</div>
+              <div class="stat-label">Clientes atendidos</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="mediaDiaria">0</div>
+              <div class="stat-label">Média diária (7 dias)</div>
+            </div>
+          </div>
+          <div class="chart-section">
+            <h4>Atendimentos por cliente</h4>
+            <div id="clientAttendanceChart" class="chart-empty">Ainda não há atendimentos registrados.</div>
+          </div>
+          <div class="chart-section">
+            <h4>Frequência — últimos 7 dias</h4>
+            <div id="attendanceFrequencyChart" class="frequency-chart" role="img" aria-label="Atendimentos nos últimos sete dias"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="privacidade" class="section">
+        <div class="form-section">
+          <h3>Privacidade e seus dados</h3>
+          <p>Seus dados ficam no armazenamento local deste perfil do Chrome. A extensão não envia sua lista de clientes ou respostas para a InfoDevBrasil.</p>
+          <p>Você pode exportar uma cópia ou apagar os dados locais da extensão.</p>
+          <button id="exportDataBtn" class="btn-primary" type="button">Exportar meus dados</button>
+          <button id="deleteDataBtn" class="btn-danger" type="button">Apagar todos os dados do CRM</button>
+          <a class="privacy-link" href="privacy.html" target="_blank" rel="noreferrer">Ler aviso de privacidade</a>
+        </div>
+      </section>
+
+      <section id="apoio" class="section">
+        <div class="form-section donation-card">
+          <h3>Apoie o desenvolvimento</h3>
+          <p>O WhatsApp CRM continuará gratuito. Se ele é útil para você, uma contribuição voluntária ajuda a manter e melhorar o projeto.</p>
+          <img class="pix-qr" src="../../assets/pix-donation.png" width="220" height="220" alt="QR Code Pix para doação voluntária a Izaias">
+          <p class="pix-recipient">Recebedor: Izaias · Rio de Janeiro</p>
+          <p class="pix-key">Chave Pix: <code id="pixKey"></code></p>
+          <button id="copyPixBtn" class="btn-primary" type="button">Copiar código Pix</button>
+          <p class="donation-note">Doação opcional, sem valor fixo. Confirme o recebedor no app do seu banco antes de pagar.</p>
+        </div>
+      </section>
+    </main>
+    <footer class="app-footer">
+      <span>by InfoDevBrasil · independente, não afiliada à Meta/WhatsApp</span>
+      <a href="mailto:infodevbrasil@gmail.com">infodevbrasil@gmail.com</a>
+    </footer>
+  </div>
+  <div id="privacyConsent" class="privacy-consent" hidden>
+    <section class="privacy-dialog" role="dialog" aria-modal="true" aria-labelledby="privacyConsentTitle">
+      <h2 id="privacyConsentTitle">Seus dados e sua privacidade</h2>
+      <p>O CRM guarda localmente neste perfil do Chrome os nomes e telefones que você cadastrar, suas etiquetas, respostas rápidas e registros de conversas abertas pelo CRM. Nada disso é enviado à InfoDevBrasil. O armazenamento não tem uma senha ou criptografia própria da extensão.</p>
+      <p>Ao abrir uma conversa, o número escolhido é usado no endereço do WhatsApp Web. Ao inserir uma resposta, o texto atual do campo é lido localmente para evitar repetição e a resposta é colocada no campo para você revisar e enviar manualmente.</p>
+      <p>Você pode exportar ou apagar os dados a qualquer momento em <strong>Privacidade</strong>.</p>
+      <a href="privacy.html" target="_blank" rel="noreferrer">Ler aviso de privacidade completo</a>
+      <button id="acceptPrivacyBtn" class="btn-primary" type="button">Entendi e continuar</button>
+      <button id="declinePrivacyBtn" class="btn-secondary" type="button">Não aceitar / fechar</button>
+    </section>
+  </div>
+  <script src="../scripts/pix.js"></script>
+  <script src="../scripts/metrics.js"></script>
+  <script src="../scripts/sidepanel.js"></script>
+</body>
+</html>

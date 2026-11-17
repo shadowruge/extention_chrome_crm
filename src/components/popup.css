@@ -1,0 +1,84 @@
+.popup-container {
+  font-family: system-ui, -apple-system, sans-serif;
+  width: 300px;
+  min-height: 260px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff, #f7fafc);
+  color: #2d3743;
+  box-sizing: border-box;
+}
+
+header {
+  text-align: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 14px;
+}
+
+#welcome {
+  text-align: center;
+  color: #718096;
+}
+
+#openPanelBtn {
+  width: 100%;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 14px;
+  background: #16a34a;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#openPanelBtn:hover {
+  background: #15803d;
+}
+
+#features ul {
+  list-style: none;
+  padding: 0;
+}
+
+#features li {
+  padding: 8px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+#features li:last-child {
+  border-bottom: none;
+}
+
+footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+footer p + p {
+  margin-top: 6px;
+}
+
+footer a {
+  color: #15803d;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}

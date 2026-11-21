@@ -10,7 +10,10 @@
   <div class="sidepanel-container">
     <header>
       <h2>💬 WhatsApp CRM</h2>
-      <button id="closeBtn" aria-label="Fechar painel">✕</button>
+      <div class="header-actions">
+        <button id="positionBtn" type="button" aria-label="Alterar posição do painel">↔</button>
+        <button id="closeBtn" type="button" aria-label="Fechar painel">✕</button>
+      </div>
     </header>
     
     <nav>
@@ -18,7 +21,7 @@
         <li><a href="#" class="active" data-section="dashboard">Dashboard</a></li>
         <li><a href="#" data-section="clientes">Clientes</a></li>
         <li><a href="#" data-section="respostas">Respostas Rápidas</a></li>
-        <li><a href="#" data-section="etiquetas">Etiquetas</a></li>
+        <li><a href="#" data-section="calendario">Calendário</a></li>
         <li><a href="#" data-section="relatorios">Relatórios</a></li>
         <li><a href="#" data-section="privacidade">Privacidade</a></li>
         <li><a href="#" data-section="apoio">Apoiar</a></li>
@@ -88,17 +91,26 @@
         </div>
       </section>
       
-      <!-- Etiquetas Section -->
-      <section id="etiquetas" class="section">
+      <!-- Calendário Section -->
+      <section id="calendario" class="section">
         <div class="form-section">
-          <h3>🏷️ Etiquetas</h3>
-          <p>Organize conversas por status ou categoria</p>
-          <ul id="etiquetasList" class="tags-list">
-            <li class="tag tag-novo">Novo</li>
-            <li class="tag tag-qualificado">Qualificado</li>
-            <li class="tag tag-em-negociacao">Em Negociação</li>
-            <li class="tag tag-cliente">Cliente</li>
-          </ul>
+          <h3>📅 Calendário de anotações</h3>
+          <p class="report-note">As etiquetas continuaram disponíveis no cadastro e na lista de clientes. Use este espaço para anotações por data.</p>
+          <div class="calendar-toolbar">
+            <button id="calendarPrevBtn" type="button" aria-label="Mês anterior">‹</button>
+            <strong id="calendarMonthLabel"></strong>
+            <button id="calendarNextBtn" type="button" aria-label="Próximo mês">›</button>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+          <div class="calendar-editor">
+            <h4 id="calendarSelectedDate"></h4>
+            <div id="calendarNotesList" class="list-empty"></div>
+            <div class="form-group">
+              <label for="calendarNoteText">Anotação</label>
+              <textarea id="calendarNoteText" maxlength="1000" rows="3" placeholder="Escreva uma anotação para esta data..."></textarea>
+            </div>
+            <button id="calendarSaveNoteBtn" class="btn-primary" type="button">Salvar anotação</button>
+          </div>
         </div>
       </section>
       
@@ -167,7 +179,7 @@
   <div id="privacyConsent" class="privacy-consent" hidden>
     <section class="privacy-dialog" role="dialog" aria-modal="true" aria-labelledby="privacyConsentTitle">
       <h2 id="privacyConsentTitle">Seus dados e sua privacidade</h2>
-      <p>O CRM guarda localmente neste perfil do navegador os nomes e telefones que você cadastrar, suas etiquetas, respostas rápidas e registros de conversas abertas pelo CRM. Nada disso é enviado à InfoDevBrasil. O armazenamento não tem uma senha ou criptografia própria da extensão.</p>
+      <p>O CRM guarda localmente neste perfil do navegador os nomes e telefones que você cadastrar, suas etiquetas, respostas rápidas, anotações do calendário e registros de conversas abertas pelo CRM. Nada disso é enviado à InfoDevBrasil. O armazenamento não tem uma senha ou criptografia própria da extensão.</p>
       <p>Ao abrir uma conversa, o número escolhido é usado no endereço do WhatsApp Web. Ao inserir uma resposta, o texto atual do campo é lido localmente para evitar repetição e a resposta é colocada no campo para você revisar e enviar manualmente.</p>
       <p>Você pode exportar ou apagar os dados a qualquer momento em <strong>Privacidade</strong>.</p>
       <a href="privacy.html" target="_blank" rel="noreferrer">Ler aviso de privacidade completo</a>
@@ -177,6 +189,7 @@
   </div>
   <script src="../scripts/pix.js"></script>
   <script src="../scripts/metrics.js"></script>
+  <script src="../scripts/calendar.js"></script>
   <script src="../scripts/sidepanel.js"></script>
 </body>
 </html>

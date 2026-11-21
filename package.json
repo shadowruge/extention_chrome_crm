@@ -1,12 +1,12 @@
 {
   "name": "whatsapp-crm-extension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Chrome extension for WhatsApp Web CRM",
   "scripts": {
     "dev": "node scripts/check-extension.js",
     "generate:pix": "node scripts/generate-pix-qr.js",
     "package:firefox": "node scripts/package-firefox.js",
-    "test": "node --test scripts/tests/*.test.js && node scripts/check-extension.js && node --check src/scripts/background-worker.js && node --check src/scripts/background.js && node --check src/scripts/content.js && node --check src/scripts/panel.js && node --check src/scripts/panel-firefox.js && node --check src/scripts/popup.js && node --check src/scripts/sidepanel.js && node --check src/scripts/metrics.js && node --check src/scripts/pix.js && node --check scripts/package-firefox.js"
+    "test": "node --test scripts/tests/*.test.js && node scripts/check-extension.js && node --check src/scripts/background-worker.js && node --check src/scripts/background.js && node --check src/scripts/calendar.js && node --check src/scripts/content.js && node --check src/scripts/panel.js && node --check src/scripts/panel-firefox.js && node --check src/scripts/popup.js && node --check src/scripts/sidepanel.js && node --check src/scripts/metrics.js && node --check src/scripts/pix.js && node --check scripts/package-firefox.js"
   },
   "author": "InfoDevBrasil <infodevbrasil@gmail.com>",
   "license": "MIT",

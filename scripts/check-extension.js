@@ -4,8 +4,16 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const firefoxManifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.firefox.json'), 'utf8'));
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
 if (manifest.manifest_version !== 3) throw new Error('Manifest deve usar a versao 3');
+if (manifest.version !== firefoxManifest.version || manifest.version !== packageJson.version) {
+  throw new Error('As versoes dos manifestos e do package.json devem coincidir');
+}
+const popupHtml = fs.readFileSync(path.join(root, 'src/pages/popup.html'), 'utf8');
+if (!popupHtml.includes(`Versão ${manifest.version}`)) {
+  throw new Error('O popup deve exibir a mesma versao dos manifestos');
+}
 if (manifest.permissions.includes('tabs')) {
   throw new Error('A permissao ampla tabs nao deve ser solicitada; use o acesso ao host necessario');
 }
@@ -14,6 +22,13 @@ if (!manifest.host_permissions?.includes('https://web.whatsapp.com/*')) {
 }
 if (manifest.background.service_worker !== 'src/scripts/background-worker.js') {
   throw new Error('O service worker Chrome deve carregar o adaptador de painel compartilhado');
+}
+const workerSource = fs.readFileSync(path.join(root, manifest.background.service_worker), 'utf8');
+if (!workerSource.includes("importScripts('panel.js', 'calendar.js', 'background.js')")) {
+  throw new Error('O service worker Chrome deve carregar painel, calendário e background');
+}
+if (manifest.action?.default_popup && manifest.side_panel?.openPanelOnActionClick) {
+  throw new Error('Chrome nao pode declarar popup e openPanelOnActionClick ao mesmo tempo');
 }
 
 if (firefoxManifest.manifest_version !== 3) throw new Error('Manifest Firefox deve usar a versao 3');
@@ -25,6 +40,9 @@ if (firefoxManifest.permissions.includes('sidePanel') || firefoxManifest.side_pa
 }
 if (firefoxManifest.background?.service_worker || !firefoxManifest.background?.scripts?.includes('src/scripts/panel.js')) {
   throw new Error('Manifest Firefox deve carregar scripts de background e o adaptador de painel');
+}
+if (!firefoxManifest.background.scripts.includes('src/scripts/calendar.js')) {
+  throw new Error('Manifest Firefox deve carregar a biblioteca de calendário');
 }
 if (!firefoxManifest.host_permissions?.includes('https://web.whatsapp.com/*')) {
   throw new Error('Manifest Firefox nao declara acesso ao WhatsApp Web');
@@ -41,6 +59,7 @@ const requiredFiles = [
   manifest.action.default_popup,
   manifest.side_panel.default_path,
   'src/scripts/background.js',
+  'src/scripts/calendar.js',
   'src/scripts/panel.js',
   'src/scripts/panel-firefox.js',
   ...firefoxManifest.background.scripts,

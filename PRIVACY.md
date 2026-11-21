@@ -12,6 +12,7 @@ Quando você usa o CRM, a extensão armazena neste perfil do navegador:
 - nomes e telefones de clientes cadastrados;
 - etiquetas atribuídas aos clientes;
 - respostas rápidas salvas;
+- anotações que você escrever no calendário, com a data escolhida;
 - contadores de atendimentos por cliente; e
 - registros diários de conversas abertas pelo CRM.
 
@@ -35,7 +36,7 @@ A extensão usa o armazenamento local do navegador e acessa o domínio `https://
 
 Os dados permanecem no perfil local até você apagá-los, remover os dados da extensão ou desinstalá-la. Na seção **Privacidade**, você pode:
 
-- exportar uma cópia JSON dos dados do CRM; e
+- exportar uma cópia JSON dos dados do CRM, incluindo as anotações do calendário; e
 - apagar os dados do CRM e revogar o consentimento.
 
 A exportação contém dados pessoais; guarde o arquivo com segurança.

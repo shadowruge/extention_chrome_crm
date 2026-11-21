@@ -1,6 +1,11 @@
-let data = { clientData: {}, quickReplies: [], attendanceHistory: [] };
+let data = { clientData: {}, quickReplies: [], attendanceHistory: [], calendarNotes: {} };
 let editingReplyId = null;
 let hasPrivacyConsent = false;
+let panelSide = 'right';
+let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth();
+let selectedDateKey = CrmCalendar.dateKey(new Date());
+let editingNoteId = null;
 const PRIVACY_CONSENT_VERSION = '1';
 
 function showPanelNotice(message) {
@@ -29,15 +34,21 @@ async function send(action, dados) {
 
 async function refreshData() {
   if (!hasPrivacyConsent) return;
-  const stored = await chrome.storage.local.get(['clientData', 'quickReplies', 'attendanceHistory']);
+  const stored = await send('getData');
+  if (stored?.type !== 'data') {
+    showPanelNotice(stored?.error || 'Nao foi possivel carregar os dados do CRM.');
+    return;
+  }
   data = {
     clientData: stored.clientData && typeof stored.clientData === 'object' ? stored.clientData : {},
     quickReplies: Array.isArray(stored.quickReplies) ? stored.quickReplies : [],
-    attendanceHistory: Array.isArray(stored.attendanceHistory) ? stored.attendanceHistory : []
+    attendanceHistory: Array.isArray(stored.attendanceHistory) ? stored.attendanceHistory : [],
+    calendarNotes: stored.calendarNotes && typeof stored.calendarNotes === 'object' ? stored.calendarNotes : {}
   };
   renderClients();
   renderReplies();
   renderStats();
+  renderCalendar();
 }
 
 function renderClients() {
@@ -312,6 +323,124 @@ function renderAttendanceCharts(report) {
   }));
 }
 
+function shiftCalendarMonth(delta) {
+  const next = new Date(calendarYear, calendarMonth + delta, 1);
+  calendarYear = next.getFullYear();
+  calendarMonth = next.getMonth();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('calendarMonthLabel').textContent = CrmCalendar.monthLabel(calendarYear, calendarMonth);
+  const weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(label => {
+    const element = document.createElement('span');
+    element.className = 'calendar-weekday';
+    element.textContent = label;
+    return element;
+  });
+  const days = CrmCalendar.monthGrid(calendarYear, calendarMonth).map(day => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'calendar-day';
+    if (!day.inMonth) button.classList.add('outside');
+    if (day.key === selectedDateKey) button.classList.add('selected');
+    if (CrmCalendar.notesForDay(data.calendarNotes, day.key).length) button.classList.add('has-notes');
+    button.dataset.date = day.key;
+    button.textContent = String(day.day);
+    button.setAttribute('aria-label', new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(`${day.key}T12:00:00`)));
+    button.addEventListener('click', () => {
+      selectedDateKey = day.key;
+      editingNoteId = null;
+      document.getElementById('calendarNoteText').value = '';
+      document.getElementById('calendarSaveNoteBtn').textContent = 'Salvar anotação';
+      renderCalendar();
+    });
+    return button;
+  });
+  document.getElementById('calendarGrid').replaceChildren(...weekdays, ...days);
+  renderCalendarNotes();
+}
+
+function renderCalendarNotes() {
+  const list = document.getElementById('calendarNotesList');
+  const notes = CrmCalendar.notesForDay(data.calendarNotes, selectedDateKey);
+  document.getElementById('calendarSelectedDate').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' })
+    .format(new Date(`${selectedDateKey}T12:00:00`));
+
+  if (!notes.length) {
+    list.className = 'list-empty';
+    const empty = document.createElement('p');
+    empty.textContent = 'Nenhuma anotação para esta data';
+    list.replaceChildren(empty);
+    return;
+  }
+
+  list.className = 'list-items';
+  list.replaceChildren(...notes.map(note => {
+    const article = document.createElement('article');
+    article.className = 'crm-note-item';
+    const text = document.createElement('p');
+    text.textContent = note.texto;
+    const actions = document.createElement('div');
+    actions.className = 'item-actions';
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'note-edit';
+    editButton.dataset.id = note.id;
+    editButton.textContent = 'Editar';
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'note-delete';
+    deleteButton.dataset.id = note.id;
+    deleteButton.textContent = 'Excluir';
+    actions.append(editButton, deleteButton);
+    article.append(text, actions);
+    return article;
+  }));
+
+  list.querySelectorAll('.note-edit').forEach(button => {
+    button.addEventListener('click', () => {
+      const note = CrmCalendar.notesForDay(data.calendarNotes, selectedDateKey).find(item => item.id === button.dataset.id);
+      if (!note) return;
+      editingNoteId = note.id;
+      document.getElementById('calendarNoteText').value = note.texto;
+      document.getElementById('calendarSaveNoteBtn').textContent = 'Atualizar anotação';
+      document.getElementById('calendarNoteText').focus();
+    });
+  });
+
+  list.querySelectorAll('.note-delete').forEach(button => {
+    button.addEventListener('click', async () => {
+      const response = await send('deleteCalendarNote', { id: button.dataset.id });
+      if (!response?.success) {
+        showPanelNotice(response?.error || 'Nao foi possivel excluir a anotação.');
+        return;
+      }
+      if (editingNoteId === button.dataset.id) {
+        editingNoteId = null;
+        document.getElementById('calendarNoteText').value = '';
+        document.getElementById('calendarSaveNoteBtn').textContent = 'Salvar anotação';
+      }
+      await refreshData();
+    });
+  });
+}
+
+function updatePanelSideButton() {
+  const button = document.getElementById('positionBtn');
+  document.body.dataset.panelSide = panelSide;
+  button.textContent = panelSide === 'right' ? '◧' : '◨';
+  button.title = `Painel na ${panelSide === 'right' ? 'direita' : 'esquerda'} — clique para alternar`;
+}
+
+async function initializePanelSide() {
+  const response = await send('getPanelSide');
+  if (response?.success && (response.side === 'left' || response.side === 'right')) {
+    panelSide = response.side;
+  }
+  updatePanelSideButton();
+}
+
 async function initializePrivacy() {
   const stored = await chrome.storage.local.get('privacyConsentVersion');
   if (stored.privacyConsentVersion === PRIVACY_CONSENT_VERSION) {
@@ -342,7 +471,8 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     exportedAt: new Date().toISOString(),
     clientData: data.clientData,
     quickReplies: data.quickReplies,
-    attendanceHistory: data.attendanceHistory
+    attendanceHistory: data.attendanceHistory,
+    calendarNotes: data.calendarNotes
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -355,7 +485,7 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
 });
 
 document.getElementById('deleteDataBtn').addEventListener('click', async () => {
-  const confirmed = window.confirm('Isso apagará clientes, respostas e indicadores deste perfil do navegador, além de revogar o consentimento. Deseja continuar?');
+  const confirmed = window.confirm('Isso apagará clientes, respostas, anotações e indicadores deste perfil do navegador, além de revogar o consentimento. Deseja continuar?');
   if (!confirmed) return;
   const response = await chrome.runtime.sendMessage({ action: 'clearCrmData' });
   if (!response?.success) {
@@ -363,7 +493,11 @@ document.getElementById('deleteDataBtn').addEventListener('click', async () => {
     return;
   }
   hasPrivacyConsent = false;
-  data = { clientData: {}, quickReplies: [], attendanceHistory: [] };
+  data = { clientData: {}, quickReplies: [], attendanceHistory: [], calendarNotes: {} };
+  editingNoteId = null;
+  document.getElementById('calendarNoteText').value = '';
+  document.getElementById('calendarSaveNoteBtn').textContent = 'Salvar anotação';
+  renderCalendar();
   document.getElementById('privacyConsent').hidden = false;
 });
 
@@ -385,6 +519,43 @@ document.querySelectorAll('nav a').forEach(link => {
     link.classList.add('active');
     document.getElementById(link.dataset.section)?.classList.add('active');
   });
+});
+
+document.getElementById('calendarPrevBtn').addEventListener('click', () => shiftCalendarMonth(-1));
+document.getElementById('calendarNextBtn').addEventListener('click', () => shiftCalendarMonth(1));
+
+document.getElementById('calendarSaveNoteBtn').addEventListener('click', async () => {
+  const texto = document.getElementById('calendarNoteText').value.trim();
+  if (!texto) {
+    showPanelNotice('Escreva uma anotação antes de salvar.');
+    return;
+  }
+  const response = editingNoteId
+    ? await send('updateCalendarNote', { id: editingNoteId, texto })
+    : await send('saveCalendarNote', { dia: selectedDateKey, texto });
+  if (!response?.success) {
+    showPanelNotice(response?.error || 'Nao foi possivel salvar a anotação.');
+    return;
+  }
+  editingNoteId = null;
+  document.getElementById('calendarNoteText').value = '';
+  document.getElementById('calendarSaveNoteBtn').textContent = 'Salvar anotação';
+  await refreshData();
+  showPanelNotice('Anotação salva.');
+});
+
+document.getElementById('positionBtn').addEventListener('click', async () => {
+  const nextSide = panelSide === 'right' ? 'left' : 'right';
+  const response = await send('setPanelSide', { side: nextSide });
+  if (!response?.success) {
+    showPanelNotice(response?.error || 'Nao foi possivel alterar a posição do painel.');
+    return;
+  }
+  panelSide = response.side;
+  updatePanelSideButton();
+  showPanelNotice(response.layoutApplied
+    ? `Painel movido para a ${panelSide === 'right' ? 'direita' : 'esquerda'}.`
+    : 'Posição salva. Neste navegador, quem define a posição da barra lateral é o navegador.');
 });
 
 document.getElementById('closeBtn').addEventListener('click', () => window.close());
@@ -434,11 +605,20 @@ salvarRespostaBtn.addEventListener('click', async () => {
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'local' && hasPrivacyConsent && (
-    changes.clientData || changes.quickReplies || changes.attendanceHistory
+  if (areaName !== 'local') return;
+  if (changes.panelSide) {
+    panelSide = changes.panelSide.newValue === 'left' ? 'left' : 'right';
+    updatePanelSideButton();
+  }
+  if (hasPrivacyConsent && (
+    changes.clientData || changes.quickReplies || changes.attendanceHistory || changes.calendarNotes
   )) {
     refreshData();
   }
+});
+
+initializePanelSide().catch(error => {
+  showPanelNotice(`Nao foi possivel carregar a posição do painel: ${error.message}`);
 });
 
 initializePrivacy().catch(error => {

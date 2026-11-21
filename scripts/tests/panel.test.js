@@ -7,31 +7,50 @@ const vm = require('node:vm');
 const chromePanelScript = fs.readFileSync(path.resolve(__dirname, '../../src/scripts/panel.js'), 'utf8');
 const firefoxPanelScript = fs.readFileSync(path.resolve(__dirname, '../../src/scripts/panel-firefox.js'), 'utf8');
 
-test('abre o painel Chrome com a aba atual', async () => {
+test('abre o painel Chrome sem aguardar nenhuma promise', async () => {
   let openedWith;
   const context = vm.createContext({
-    chrome: { sidePanel: { async open(options) { openedWith = options; } } }
+    chrome: { sidePanel: { open(options) { openedWith = options; return Promise.resolve(); } } }
   });
   vm.runInContext(chromePanelScript, context);
 
-  await context.openCrmPanel(42);
+  const opening = context.openCrmPanel({ windowId: 7 });
+
+  assert.equal(openedWith.windowId, 7);
+  await opening;
+});
+
+test('usa a aba enviada pelo atalho do Chrome', async () => {
+  let openedWith;
+  const context = vm.createContext({
+    chrome: {
+      sidePanel: { open(options) { openedWith = options; return Promise.resolve(); } },
+      tabs: { query() { throw new Error('o atalho nao deve consultar abas antes de abrir'); } }
+    }
+  });
+  vm.runInContext(chromePanelScript, context);
+
+  await context.openCrmPanelFromCommand({ id: 42, windowId: 7 });
 
   assert.equal(openedWith.tabId, 42);
 });
 
-test('usa a barra lateral do Firefox quando a API Chrome nao existe', async () => {
-  let openCount = 0;
-  const context = vm.createContext({ browser: { sidebarAction: { async open() { openCount++; } } } });
+test('abre a barra lateral do Firefox dentro do handler do atalho', async () => {
+  let opened = false;
+  const context = vm.createContext({
+    browser: { sidebarAction: { open() { opened = true; return Promise.resolve(); } } }
+  });
   vm.runInContext(firefoxPanelScript, context);
 
-  await context.openCrmPanel(42);
+  const opening = context.openCrmPanelFromCommand({ id: 42 });
 
-  assert.equal(openCount, 1);
+  assert.equal(opened, true);
+  await opening;
 });
 
 test('informa erro quando o navegador nao oferece painel lateral', async () => {
   const context = vm.createContext({});
   vm.runInContext(chromePanelScript, context);
 
-  await assert.rejects(context.openCrmPanel(42), /nao oferece suporte/i);
+  await assert.rejects(context.openCrmPanel({ tabId: 42 }), /nao oferece suporte/i);
 });

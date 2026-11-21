@@ -19,6 +19,7 @@ const files = [
   'src/pages/privacy.html',
   'src/pages/sidepanel.html',
   'src/scripts/background.js',
+  'src/scripts/calendar.js',
   'src/scripts/content.js',
   'src/scripts/metrics.js',
   'src/scripts/panel-firefox.js',

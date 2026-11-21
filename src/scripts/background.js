@@ -3,50 +3,63 @@
 
 console.log('WhatsApp CRM Background Service Worker carregado');
 
-chrome.commands.onCommand.addListener(async command => {
+chrome.commands.onCommand.addListener((command, tab) => {
   if (command !== 'open_side_panel') return;
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) await openCrmPanel(tab.id);
-  } catch (error) {
+  Promise.resolve(openCrmPanelFromCommand(tab)).catch(error => {
     console.error('Nao foi possivel abrir o painel do CRM:', error);
-  }
+  });
 });
 
 // O MVP mantém os dados localmente no perfil do Chrome.
 let clientData = {};
 let quickReplies = [];
 let attendanceHistory = [];
+let calendarNotes = {};
 let privacyConsentAccepted = false;
 let crmDataLoaded = false;
+let panelSide = 'right';
 
 const storageReady = chrome.storage.local
-  .get('privacyConsentVersion')
+  .get(['privacyConsentVersion', 'panelSide'])
   .then(result => {
     privacyConsentAccepted = result.privacyConsentVersion === '1';
-  });
+    panelSide = result.panelSide === 'left' ? 'left' : 'right';
+    return applyPanelSide(panelSide);
+  })
+  .catch(() => {});
+
+chrome.storage.onChanged.addListener(changes => {
+  if (changes.clientData || changes.quickReplies || changes.attendanceHistory || changes.calendarNotes) {
+    crmDataLoaded = false;
+  }
+  if (changes.panelSide) {
+    panelSide = changes.panelSide.newValue === 'left' ? 'left' : 'right';
+    applyPanelSide(panelSide);
+  }
+});
 
 async function salvarNoStorage() {
-  await chrome.storage.local.set({ clientData, quickReplies, attendanceHistory });
+  await chrome.storage.local.set({ clientData, quickReplies, attendanceHistory, calendarNotes });
 }
 
 async function carregarDadosCrm() {
   if (crmDataLoaded) return;
-  const result = await chrome.storage.local.get(['clientData', 'quickReplies', 'attendanceHistory']);
+  const result = await chrome.storage.local.get(['clientData', 'quickReplies', 'attendanceHistory', 'calendarNotes']);
   clientData = result.clientData && typeof result.clientData === 'object' ? result.clientData : {};
   quickReplies = Array.isArray(result.quickReplies) ? result.quickReplies : [];
   attendanceHistory = Array.isArray(result.attendanceHistory) ? result.attendanceHistory : [];
+  calendarNotes = CrmCalendar.normalizeNotes(result.calendarNotes);
   crmDataLoaded = true;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  handleMessage(message, sender)
+  handleMessage(message)
     .then(sendResponse)
     .catch(error => sendResponse({ success: false, error: error.message }));
   return true;
 });
 
-async function handleMessage(message, sender) {
+async function handleMessage(message) {
   await storageReady;
 
   if (message.action === 'acceptPrivacyConsent') {
@@ -60,26 +73,33 @@ async function handleMessage(message, sender) {
     clientData = {};
     quickReplies = [];
     attendanceHistory = [];
+    calendarNotes = {};
     crmDataLoaded = true;
     privacyConsentAccepted = false;
     await chrome.storage.local.remove([
       'clientData',
       'quickReplies',
       'attendanceHistory',
+      'calendarNotes',
       'totalAtendimentos',
       'privacyConsentVersion'
     ]);
     return { success: true };
   }
 
-  if (message.action === 'openSidePanel') {
-    if (!sender.tab?.id) return { success: false, error: 'Nao foi possivel identificar a aba atual' };
+  if (message.action === 'getPanelSide') {
+    return { success: true, side: panelSide };
+  }
+
+  if (message.action === 'setPanelSide') {
+    const side = message.dados?.side === 'left' ? 'left' : 'right';
+    panelSide = side;
+    await chrome.storage.local.set({ panelSide: side });
+    let layoutApplied = false;
     try {
-      await openCrmPanel(sender.tab.id);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+      layoutApplied = await applyPanelSide(side);
+    } catch (_) {}
+    return { success: true, side, layoutApplied };
   }
 
   if (!privacyConsentAccepted) {
@@ -93,6 +113,7 @@ async function handleMessage(message, sender) {
       clientData,
       quickReplies,
       attendanceHistory,
+      calendarNotes,
       totalAtendimentos: Object.values(clientData).reduce((sum, client) => sum + (Number.isInteger(client.atendimentos) ? client.atendimentos : 0), 0)
     };
   }
@@ -212,6 +233,55 @@ async function handleMessage(message, sender) {
       0
     );
     return { success: true, totalAtendimentos };
+  }
+
+  if (message.action === 'saveCalendarNote') {
+    const dia = String(message.dados?.dia || '');
+    const texto = String(message.dados?.texto || '').trim();
+    if (!CrmCalendar.isValidDateKey(dia)) return { success: false, error: 'Data da anotação invalida' };
+    if (!texto) return { success: false, error: 'Informe o texto da anotação' };
+    if (texto.length > CrmCalendar.MAX_NOTE_LENGTH) {
+      return { success: false, error: `A anotação deve ter no maximo ${CrmCalendar.MAX_NOTE_LENGTH} caracteres` };
+    }
+    const note = {
+      id: `${Date.now()}-${crypto.randomUUID()}`,
+      texto,
+      criadoEm: new Date().toISOString()
+    };
+    calendarNotes[dia] = [...(calendarNotes[dia] || []), note];
+    await salvarNoStorage();
+    return { success: true, note, calendarNotes };
+  }
+
+  if (message.action === 'updateCalendarNote') {
+    const id = String(message.dados?.id || '');
+    const texto = String(message.dados?.texto || '').trim();
+    if (!texto) return { success: false, error: 'Informe o texto da anotação' };
+    if (texto.length > CrmCalendar.MAX_NOTE_LENGTH) {
+      return { success: false, error: `A anotação deve ter no maximo ${CrmCalendar.MAX_NOTE_LENGTH} caracteres` };
+    }
+    let found = false;
+    for (const [dia, entries] of Object.entries(calendarNotes)) {
+      const index = entries.findIndex(entry => entry.id === id);
+      if (index === -1) continue;
+      calendarNotes[dia][index] = { ...entries[index], texto, atualizadoEm: new Date().toISOString() };
+      found = true;
+      break;
+    }
+    if (!found) return { success: false, error: 'Anotação nao encontrada' };
+    await salvarNoStorage();
+    return { success: true, calendarNotes };
+  }
+
+  if (message.action === 'deleteCalendarNote') {
+    const id = String(message.dados?.id || '');
+    for (const [dia, entries] of Object.entries(calendarNotes)) {
+      const remaining = entries.filter(entry => entry.id !== id);
+      if (remaining.length) calendarNotes[dia] = remaining;
+      else delete calendarNotes[dia];
+    }
+    await salvarNoStorage();
+    return { success: true, calendarNotes };
   }
 
   return { success: false, error: 'Acao desconhecida' };

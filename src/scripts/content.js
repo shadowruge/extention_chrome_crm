@@ -21,13 +21,7 @@ function init() {
   
   // Injetar CSS estilizado
   injectStyles();
-  
-  // Observar mudanças no DOM (mensagens novas)
-  observeMessages();
-  
-  // Configurar atalhos/respostas rápidas
-  setupQuickReplies();
-  
+
   // Registrar mensagens para comunicação com o background
   registerMessageListeners();
 }
@@ -39,38 +33,6 @@ function isWhatsAppWeb() {
 function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
-    .crm-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #48bb78;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 10px;
-      font-size: 0.65rem;
-      font-weight: bold;
-      z-index: 9999;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    }
-    
-    .crm-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 40px;
-      background: #e2e8f0;
-      color: #2d3743;
-      padding: 4px 8px;
-      border-radius: 10px;
-      font-size: 0.65rem;
-      cursor: pointer;
-      z-index: 9999;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .crm-action-btn:hover {
-      background: #a0aec0;
-    }
-    
     .crm-quick-reply {
       position: fixed;
       bottom: 20px;
@@ -104,42 +66,6 @@ function injectStyles() {
     }
   `;
   document.head.appendChild(style);
-}
-
-function observeMessages() {
-  // Observador de mensagens no WhatsApp Web
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      // Verificar se novas mensagens foram adicionadas
-      if (mutation.addedNodes.length > 0) {
-        // Processar novas mensagens aqui
-        // Isso será ativado quando o usuário abrir o painel lateral
-      }
-    });
-  });
-  
-  // Observar o container de mensagens
-  const messageContainer = document.querySelector('[role="main"]');
-  if (messageContainer) {
-    observer.observe(messageContainer, { childList: true, subtree: true });
-  }
-}
-
-function setupQuickReplies() {
-  // Criar botão de resposta rápida flutuante
-  const btn = document.createElement('div');
-  btn.className = 'crm-action-btn';
-  btn.textContent = 'Respostas';
-  btn.title = 'Abrir respostas rápidas';
-  
-  // Posicionar no primeiro elemento de mensagem encontrado
-  const firstMessage = document.querySelector('[data-testid="msg-container"]');
-  if (firstMessage && !document.querySelector('.crm-action-btn')) {
-    firstMessage.appendChild(btn);
-    btn.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'openSidePanel' });
-    });
-  }
 }
 
 function registerMessageListeners() {
@@ -190,11 +116,51 @@ function mostrarRespostaRapida(mensagem) {
   return Boolean(findChatEditor());
 }
 
+const EDITOR_SELECTORS = [
+  'footer [contenteditable="true"][role="textbox"]',
+  '[data-testid="conversation-compose-box-input"]',
+  'div[contenteditable="true"][data-lexical-editor="true"]',
+  'div[contenteditable="true"][role="textbox"][data-tab="10"]',
+  'div[contenteditable="true"][role="textbox"]'
+];
+
 function findChatEditor() {
-  return document.querySelector('footer [contenteditable="true"][role="textbox"]')
-    || document.querySelector('[contenteditable="true"][role="textbox"][data-tab="10"]')
-    || document.querySelector('div[contenteditable="true"][data-lexical-editor="true"]')
-    || document.querySelector('[contenteditable="true"][role="textbox"]');
+  for (const selector of EDITOR_SELECTORS) {
+    for (const candidate of document.querySelectorAll(selector)) {
+      if (typeof candidate.getClientRects !== 'function' || candidate.getClientRects().length > 0) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}
+
+function insertTextAtCursor(editor, texto) {
+  editor.focus();
+  const selection = window.getSelection();
+  if (!selection || typeof document.createRange !== 'function') return false;
+
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  if (typeof document.execCommand === 'function' && document.execCommand('insertText', false, texto)) {
+    return true;
+  }
+
+  const node = document.createTextNode(texto);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const event = typeof InputEvent === 'function'
+    ? new InputEvent('input', { bubbles: true, inputType: 'insertText', data: texto })
+    : new Event('input', { bubbles: true });
+  editor.dispatchEvent(event);
+  return true;
 }
 
 function enviarNoWhatsApp(texto) {
@@ -203,21 +169,9 @@ function enviarNoWhatsApp(texto) {
   const editor = findChatEditor();
   if (!editor) return false;
 
-  editor.focus();
-  const selection = window.getSelection();
-  if (selection) {
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
-
   const currentText = (editor.innerText || editor.textContent || '').trimEnd();
   if (currentText === texto || currentText.endsWith(`\n${texto}`)) return true;
 
   const insertedText = currentText ? `\n${texto}` : texto;
-  document.execCommand('insertText', false, insertedText);
-
-  return true;
+  return insertTextAtCursor(editor, insertedText);
 }

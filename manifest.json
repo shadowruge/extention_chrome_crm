@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "WhatsApp CRM Extension",
   "description": "Extensão para Google Chrome integrada ao WhatsApp Web com recursos de CRM e produtividade",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "permissions": [
     "storage",
     "sidePanel"
@@ -36,8 +36,7 @@
     "service_worker": "src/scripts/background-worker.js"
   },
   "side_panel": {
-    "default_path": "src/pages/sidepanel.html",
-    "openPanelOnActionClick": true
+    "default_path": "src/pages/sidepanel.html"
   },
   "action": {
     "default_popup": "src/pages/popup.html",

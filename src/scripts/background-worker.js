@@ -1,1 +1,1 @@
-importScripts('panel.js', 'background.js');
+importScripts('panel.js', 'calendar.js', 'background.js');

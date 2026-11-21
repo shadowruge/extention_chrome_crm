@@ -1,13 +1,32 @@
-document.getElementById('openPanelBtn').addEventListener('click', async () => {
+const openPanelBtn = document.getElementById('openPanelBtn');
+const popupNotice = document.getElementById('popupNotice');
+let panelOptions;
+
+function showPanelError(error) {
+  popupNotice.textContent = `Nao foi possivel abrir o painel: ${error.message}`;
+  popupNotice.hidden = false;
+}
+
+if (typeof chrome !== 'undefined' && chrome.sidePanel?.open && chrome.windows?.getCurrent) {
+  openPanelBtn.disabled = true;
+  chrome.windows.getCurrent()
+    .then(currentWindow => {
+      panelOptions = { windowId: currentWindow.id };
+      openPanelBtn.disabled = false;
+    })
+    .catch(showPanelError);
+}
+
+openPanelBtn.addEventListener('click', () => {
+  let opening;
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) {
-      await openCrmPanel(tab.id);
-      window.close();
-    }
+    opening = openCrmPanel(panelOptions);
   } catch (error) {
-    const notice = document.getElementById('popupNotice');
-    notice.textContent = `Nao foi possivel abrir o painel: ${error.message}`;
-    notice.hidden = false;
+    showPanelError(error);
+    return;
   }
+
+  Promise.resolve(opening)
+    .then(() => window.close())
+    .catch(showPanelError);
 });

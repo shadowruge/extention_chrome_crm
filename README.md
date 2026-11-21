@@ -44,9 +44,16 @@ extention_chrome_crm/
 - Salvar, editar, excluir e usar respostas
 - Inserir respostas no campo de mensagem do WhatsApp Web
 
-### 3. Painel Lateral
+### 3. Calendário de Anotações
+- Anotações por data no painel lateral, com criação, edição e exclusão
+- Datas com anotações destacadas no calendário mensal
+- Anotações incluídas no backup JSON e apagadas com os demais dados
+- Etiquetas continuam apenas no cadastro e na lista de clientes
+
+### 4. Painel Lateral
 - Acessível via ícone da extensão ou atalho (Ctrl+Shift+Y / Cmd+Shift+Y)
-- Navegação entre seções (Dashboard, Clientes, Respostas, Etiquetas, Relatórios)
+- Navegação entre seções (Dashboard, Clientes, Respostas, Calendário, Relatórios)
+- Botão no cabeçalho para alternar a posição da barra lateral no Chrome; no Firefox a posição é definida pelo navegador
 - Interface responsiva para WhatsApp Web
 - Relatórios com atendimentos iniciados por cliente e frequência diária dos últimos sete dias
 - Os gráficos contam a abertura de uma conversa pelo cadastro do CRM, não mensagens enviadas
@@ -65,7 +72,7 @@ O arquivo para enviar à Mozilla será `dist/whatsapp-crm-firefox.zip`. A pasta 
 
 Para testar no Firefox, abra `about:debugging#/runtime/this-firefox`, clique em **Load Temporary Add-on...** e selecione `dist/firefox/manifest.json`. Para publicar, carregue o ZIP no [AMO Developer Hub](https://addons.mozilla.org/developers/). A validação automática e a revisão da Mozilla ainda são necessárias; gerar o ZIP não publica o complemento.
 
-### 4. Integração com WhatsApp Web
+### 5. Integração com WhatsApp Web
 - Abre uma conversa existente pelo telefone cadastrado no CRM
 - Insere respostas rápidas no campo de mensagem para revisão e envio manual
 
@@ -78,7 +85,7 @@ Para testar no Firefox, abra `about:debugging#/runtime/this-firefox`, clique em 
 5. **Relatórios Avançados** - Métricas e gráficos adicionais de produtividade
 
 ## 🔒 Privacidade e segurança
-- Dados de clientes e respostas ficam no armazenamento local do navegador; o MVP não usa Supabase nem envia esses dados a um servidor.
+- Dados de clientes, respostas e anotações do calendário ficam no armazenamento local do navegador; o MVP não usa Supabase nem envia esses dados a um servidor.
 - A extensão pede consentimento no primeiro uso e permite exportar ou apagar os dados.
 - O armazenamento local não é criptografado por senha da extensão; proteja o dispositivo e o perfil do Chrome.
 - A página de privacidade da extensão está em `src/pages/privacy.html`; a versão Markdown está em [PRIVACY.md](./PRIVACY.md) e pode ser publicada em uma URL pública para a listagem da loja.
@@ -99,7 +106,7 @@ Execute `npm run package:firefox` para gerar o pacote de distribuição da Mozil
 3. Clique em "Carregar extensão não compactada"
 4. Selecione a pasta `/home/izaias/Modelos/extention_chrome_crm`
 5. Clique no ícone da extensão para abrir o popup
-6. Use o painel lateral (clique no ícone novamente ou use atalho)
+6. Clique em **Abrir painel CRM** no popup (ou use `Ctrl+Shift.Y` / `Cmd+Shift+Y`)
 
 ## 🌐 Publicação no Chrome
 Para a Chrome Web Store, prepare um pacote com o manifesto Chrome (sem chave privada), envie pelo Chrome Web Store Developer Dashboard e complete a ficha da loja e as declarações de privacidade. Consulte a documentação oficial antes do envio.

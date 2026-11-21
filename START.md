@@ -2,16 +2,16 @@ RELATÓRIO DE ESTADO DO PROJETO
 Extensão para Chrome e Firefox integrada ao WhatsApp Web
 Data: 17/11/2026
 Etapa: MVP local e preparação para publicação
-Status: cadastro local de clientes, etiquetas, respostas rápidas e indicadores implementados.
+Status: cadastro local de clientes, etiquetas, respostas rápidas, anotações em calendário e indicadores implementados.
 
 1. RESUMO EXECUTIVO
-O projeto é uma extensão independente para Google Chrome que oferece recursos locais de produtividade e gestão junto ao WhatsApp Web. O MVP inclui clientes, etiquetas, respostas rápidas inseridas para revisão e gráficos de conversas abertas pelo CRM. Não é uma integração oficial da Meta e não envia mensagens automaticamente.
+O projeto é uma extensão independente para Google Chrome e Firefox que oferece recursos locais de produtividade e gestão junto ao WhatsApp Web. O MVP inclui clientes, etiquetas, respostas rápidas inseridas para revisão, anotações em calendário e gráficos de conversas abertas pelo CRM. Não é uma integração oficial da Meta e não envia mensagens automaticamente.
 
 2. OBJETIVO DO PRODUTO
 Criar uma camada complementar para organizar contatos e atendimentos, facilitar respostas e, futuramente, apoiar vendas, acompanhamento de clientes e análise de produtividade. A extensão não substitui o WhatsApp e não deve ser apresentada como integração oficial da Meta.
 
 3. FUNCIONALIDADES
-• Implementadas: cadastro e exclusão local de clientes, telefone, alteração de etiquetas, respostas rápidas, abertura de conversa pelo telefone, métricas de atendimento, exportação/exclusão de dados e doação Pix opcional.
+• Implementadas: cadastro e exclusão local de clientes, telefone, alteração de etiquetas, respostas rápidas, calendário de anotações, alternância de posição da barra lateral no Chrome, abertura de conversa pelo telefone, métricas de atendimento, exportação/exclusão de dados e doação Pix opcional.
 • Privacidade: aviso com consentimento explícito antes de carregar dados do CRM; os dados ficam no perfil local do Chrome.
 • Licença do código: MIT. A página de privacidade local ainda precisa ser publicada em uma URL pública antes da Chrome Web Store.
 • Ainda não implementadas: sincronização entre dispositivos, equipe, Kanban, IA e relatórios avançados.
